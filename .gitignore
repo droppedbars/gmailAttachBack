@@ -1,0 +1,6 @@
+/*.json
+__pycache__
+.vscode
+/testImages/download-*.png
+fromgmail
+token.pickle
