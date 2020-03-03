@@ -49,15 +49,16 @@ def authenticate(tokenFileName: str, credFileName: str):
     return creds
 
 
-def main():
-    LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=LOGFORMAT)
+def getHeaderInfo(message):
+    for header in message['payload']['headers']:
+        if header['name'] == 'Subject':
+            subject = header['value']
+        if header['name'] == 'Date':
+            date = header['value']
+    return date, subject
 
-    creds = authenticate('token.pickle', 'credentials-gmail.json')
 
-    service = build(API_NAME, API_VER, credentials=creds,
-                    cache_discovery=False)
-
+def downloadAttachmentsFromGmail(service):
     messagelist = service.users().messages().list(userId='me').execute()
     for messageMeta in messagelist['messages']:
         message = service.users().messages().get(
@@ -69,11 +70,7 @@ def main():
         filename = ''
         date = ''
 
-        for header in message['payload']['headers']:
-            if header['name'] == 'Subject':
-                subject = header['value']
-            if header['name'] == 'Date':
-                date = header['value']
+        date, subject = getHeaderInfo(message)
 
         logger.debug("Checking message: %s from %s", subject, date)
         if 'parts' in message['payload']:
@@ -104,6 +101,18 @@ def main():
                     f = open(path, 'wb')
                     f.write(file_data)
                     f.close()
+
+
+def main():
+    LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=LOGFORMAT)
+
+    creds = authenticate('token.pickle', 'credentials-gmail.json')
+
+    service = build(API_NAME, API_VER, credentials=creds,
+                    cache_discovery=False)
+
+    downloadAttachmentsFromGmail(service)
 
 
 if __name__ == '__main__':
