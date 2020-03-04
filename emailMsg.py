@@ -24,6 +24,7 @@ class Attachment():
         self.__msgId = msgId
         self.__service = service
         self.filename = fileName
+        self.__userId = userId
 
         attachment = service.users().messages().attachments().get(
             userId=userId, messageId=msgId, id=attachmentId).execute()
@@ -46,10 +47,12 @@ class EmailMsg():
             userId=userId, id=msgId).execute()
 
         self.__msgId = msgId
-        self.date, self.subject = self.__getHeaderInfo(message)
+        self.date, self.sender, self.subject = self.__getHeaderInfo(message)
+        # TODO: get the actual email body in here
         self.__attachments = self.__getAttachments(message)
         self.__attachmentIndex = 0
         self.__service = service
+        self.__userId = userId
 
     def __getHeaderInfo(self, message):
         for header in message['payload']['headers']:
@@ -57,7 +60,9 @@ class EmailMsg():
                 subject = header['value']
             if header['name'] == 'Date':
                 date = header['value']
-        return date, subject
+            if header['name'] == 'From':
+                sender = header['value']
+        return date, sender, subject
 
     def __getAttachments(self, message):
         attachmentList = []
@@ -88,9 +93,47 @@ class EmailMsg():
         if length <= 0 or length <= self.__attachmentIndex:
             raise StopIteration()
         attachment = Attachment(self.__service, self.__msgId,
-                                self.__attachments[self.__attachmentIndex]['id'], self.__attachments[self.__attachmentIndex]['filename'])
+                                self.__attachments[self.__attachmentIndex]['id'],
+                                self.__attachments[self.__attachmentIndex]['filename'],
+                                self.__userId)
         self.__attachmentIndex += 1
         return attachment
+
+
+class Email():
+    def __init__(self, service, userId: str = 'me', query: str = None):
+        self.logger = logging.getLogger(
+            "emailMsg." + self.__class__.__name__)
+
+        if not service:
+            raise ValueError("Valid service required for email.")
+
+        self.__service = service
+        self.__userId = userId
+        self.__query = query
+
+        messagelist = service.users().messages().list(
+            userId=self.__userId, q=self.__query).execute()
+        self.__messages = messagelist['messages']
+        self.__nextPageToken = None
+        if 'nextPageToken' in messagelist:
+            self.__nextPageToken = messagelist['nextPageToken']
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if len(self.__messages) > 0:
+            messageIds = self.__messages.pop(0)
+            message = EmailMsg(self.__service, messageIds['id'], self.__userId)
+            return message
+        else:
+            if not self.__nextPageToken:
+                raise StopIteration
+            messagelist = service.users().messages().list(
+                userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
+            self.__messages = messagelist['messages']
+            self.__nextPageToken = messagelist['nextPageToken']
 
 
 def authenticate(tokenFileName: str, credFileName: str):
@@ -131,7 +174,7 @@ API_VER = 'v1'
 def main():
 
     LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
-    logging.basicConfig(level=logging.DEBUG, format=LOGFORMAT)
+    logging.basicConfig(level=logging.WARNING, format=LOGFORMAT)
 
     creds = authenticate('token.pickle', 'credentials-gmail.json')
 
@@ -147,6 +190,11 @@ def main():
         f = open(path, 'wb')
         f.write(attachment.bytes)
         f.close()
+
+    emails = Email(service, query='has:attachment')
+
+    for email in emails:
+        print(email.sender)
 
 
 if __name__ == '__main__':
