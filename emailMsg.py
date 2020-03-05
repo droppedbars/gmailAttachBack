@@ -131,7 +131,7 @@ class Email():
         else:
             if not self.__nextPageToken:
                 raise StopIteration
-            messagelist = service.users().messages().list(
+            messagelist = self.__service.users().messages().list(
                 userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
             self.__messages = messagelist['messages']
             self.__nextPageToken = messagelist['nextPageToken']

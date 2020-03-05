@@ -71,6 +71,7 @@ def downloadAttachmentsFromGmail(service):
 def main():
     LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
     logging.basicConfig(level=logging.DEBUG, format=LOGFORMAT)
+    logging.getLogger('googleapiclient').setLevel(logging.WARNING)
 
     creds = authenticate('token.pickle', 'credentials-gmail.json')
 
