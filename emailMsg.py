@@ -124,17 +124,16 @@ class Email():
         return self
 
     def __next__(self):
-        if len(self.__messages) > 0:
-            messageIds = self.__messages.pop(0)
-            message = EmailMsg(self.__service, messageIds['id'], self.__userId)
-            return message
-        else:
+        if len(self.__messages) <= 0:
             if not self.__nextPageToken:
                 raise StopIteration
             messagelist = self.__service.users().messages().list(
                 userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
             self.__messages = messagelist['messages']
             self.__nextPageToken = messagelist['nextPageToken']
+        messageIds = self.__messages.pop(0)
+        message = EmailMsg(self.__service, messageIds['id'], self.__userId)
+        return message
 
 
 def authenticate(tokenFileName: str, credFileName: str):

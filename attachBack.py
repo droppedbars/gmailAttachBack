@@ -61,11 +61,20 @@ def downloadAttachmentsFromGmail(service):
                              attachment.contentType)
                 # TODO: actually want to give the file a fake name and extension from the mimetype
                 if attachment.filename:
-                    path = ''.join(['./fromgmail/', attachment.filename])
-
-                    f = open(path, 'wb')
-                    f.write(attachment.bytes)
-                    f.close()
+                    # TODO: just proving a point, not a good way to do this, for now skipping
+                    #  it seems some filenames may be files with parameters like in HTTP
+                    #  so, should try to fix the filenames to be on what is allowable by the OS. Example:
+                    # Content-Type: image/png; name="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
+                    # Content-Transfer-Encoding: base64
+                    # Content-Disposition: inline; filename="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
+                    # Content-ID: <sys_attachment.dosys_idf2b51517db5f1700abe8a5f74b961956@SNC.84ec9c02de157ddb>
+                    if '?' not in attachment.filename:
+                        logger.debug("Filename: %s", attachment.filename)
+                        path = ''.join(['./fromgmail/', attachment.filename])
+                        # TODO: deal with duplicate names
+                        f = open(path, 'wb')
+                        f.write(attachment.bytes)
+                        f.close()
 
 
 def main():
