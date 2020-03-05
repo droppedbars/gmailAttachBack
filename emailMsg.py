@@ -10,7 +10,7 @@ from googleapiclient.discovery import build
 
 
 class Attachment():
-    def __init__(self, service, msgId: str, attachmentId: str, fileName: str, userId: str = 'me'):
+    def __init__(self, service, msgId: str, attachmentId: str, fileName: str, userId: str = 'me', contentType: str = None):
         self.logger = logging.getLogger(
             "emailMsg." + self.__class__.__name__)
         if not service:
@@ -25,6 +25,7 @@ class Attachment():
         self.__service = service
         self.filename = fileName
         self.__userId = userId
+        self.contentType = contentType
 
         attachment = service.users().messages().attachments().get(
             userId=userId, messageId=msgId, id=attachmentId).execute()
@@ -95,7 +96,7 @@ class EmailMsg():
         attachment = Attachment(self.__service, self.__msgId,
                                 self.__attachments[self.__attachmentIndex]['id'],
                                 self.__attachments[self.__attachmentIndex]['filename'],
-                                self.__userId)
+                                self.__userId, self.__attachments[self.__attachmentIndex]['content-type'])
         self.__attachmentIndex += 1
         return attachment
 
@@ -172,7 +173,6 @@ API_VER = 'v1'
 
 
 def main():
-
     LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
     logging.basicConfig(level=logging.WARNING, format=LOGFORMAT)
 
@@ -205,3 +205,4 @@ if __name__ == '__main__':
 # TODO: debug logging
 # TODO: error handling on failed calls
 # TODO: documenting
+# TODO: deleting an email
