@@ -73,13 +73,13 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', co
                     if '?' not in attachment.filename:
                         # TODO: deal with invalid path names
                         logger.debug("Filename: %s", attachment.filename)
-                        if downloadPath[-1] == '/' or downloadPath[-1] == '\\':
-                            seperator = ''
-                        else:
-                            seperator = '/'
+                        diff = ''
+                        if os.path.exists(''.join([downloadPath, attachment.filename])):
+                            diff = str(time.time())+'-'
+
                         path = ''.join(
-                            [downloadPath, seperator, attachment.filename])
-                        # TODO: deal with duplicate names
+                            [downloadPath, diff, attachment.filename])
+                        logger.debug("Writing: %s", path)
                         f = open(path, 'wb')
                         f.write(attachment.bytes)
                         f.close()
@@ -89,6 +89,8 @@ def main():
     load_dotenv()
     logLevel = os.getenv('ATTACH_LOG_LEVEL', 'INFO')
     downloadPath = os.getenv('ATTACH_DOWNLOAD_PATH', './')
+    if downloadPath[-1] != '/' and downloadPath[-1] != '\\':
+        downloadPath = downloadPath + '/'
     appCredentials = os.getenv('ATTACH_APP_CREDENTIALS', './credentials.json')
     apiToken = os.getenv('ATTACH_API_TOKEN', './token.pickle')
     query = os.getenv('ATTACH_GMAIL_SEARCH', '')
