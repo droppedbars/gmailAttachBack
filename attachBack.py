@@ -2,6 +2,7 @@ from __future__ import print_function
 
 import base64
 import logging
+import mimetypes
 import os
 import os.path
 import pickle
@@ -61,28 +62,36 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', co
             if contentType in attachment.contentType:
                 logger.debug("Mimetype of attachment: %s",
                              attachment.contentType)
-                # TODO: actually want to give the file a fake name and extension from the mimetype
-                if attachment.filename:
-                    # TODO: just proving a point, not a good way to do this, for now skipping
-                    #  it seems some filenames may be files with parameters like in HTTP
-                    #  so, should try to fix the filenames to be on what is allowable by the OS. Example:
-                    # Content-Type: image/png; name="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
-                    # Content-Transfer-Encoding: base64
-                    # Content-Disposition: inline; filename="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
-                    # Content-ID: <sys_attachment.dosys_idf2b51517db5f1700abe8a5f74b961956@SNC.84ec9c02de157ddb>
-                    if '?' not in attachment.filename:
-                        # TODO: deal with invalid path names
-                        logger.debug("Filename: %s", attachment.filename)
-                        diff = ''
-                        if os.path.exists(''.join([downloadPath, attachment.filename])):
-                            diff = str(time.time())+'-'
+                filename = attachment.filename
+                if not attachment.filename:
+                    # TODO: risk, content-type sometimes has multiple fields, appears to seperate by semi-colon
+                    #  need to remove the noise and just use the content type otherwise the extesion guess could break
+                    # TODO: deal with exceptions
+                    filename = email.subject + \
+                        mimetypes.guess_extension(attachment.contentType)
+                    logger.info(
+                        "Attachment had no file name. It will be named: %s", filename)
+                # TODO: just proving a point, not a good way to do this, for now skipping
+                #  it seems some filenames may be files with parameters like in HTTP
+                #  so, should try to fix the filenames to be on what is allowable by the OS. Example:
+                # Content-Type: image/png; name="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
+                # Content-Transfer-Encoding: base64
+                # Content-Disposition: inline; filename="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
+                # Content-ID: <sys_attachment.dosys_idf2b51517db5f1700abe8a5f74b961956@SNC.84ec9c02de157ddb>
+                if '?' not in filename:
+                    # TODO: deal with invalid path names
+                    logger.debug("Filename: %s", filename)
+                    diff = ''
+                    if os.path.exists(''.join([downloadPath, filename])):
+                        logger.info("Duplicate file %s found.", filename)
+                        diff = str(time.time())+'-'
 
-                        path = ''.join(
-                            [downloadPath, diff, attachment.filename])
-                        logger.debug("Writing: %s", path)
-                        f = open(path, 'wb')
-                        f.write(attachment.bytes)
-                        f.close()
+                    path = ''.join(
+                        [downloadPath, diff, filename])
+                    logger.info("Writing: %s", path)
+                    f = open(path, 'wb')
+                    f.write(attachment.bytes)
+                    f.close()
 
 
 def main():
