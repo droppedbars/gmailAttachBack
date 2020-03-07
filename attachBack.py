@@ -60,15 +60,17 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', co
     for email in emails:
         for attachment in email:
             if contentType in attachment.contentType:
-                logger.debug("Mimetype of attachment: %s",
+                logger.debug("Content-type string of attachment: %s",
                              attachment.contentType)
+                mimetype = attachment.contentType.split(';')[0]
+                logger.debug("Mimetype determined to be: %s", mimetype)
                 filename = attachment.filename
                 if not attachment.filename:
                     # TODO: risk, content-type sometimes has multiple fields, appears to seperate by semi-colon
                     #  need to remove the noise and just use the content type otherwise the extesion guess could break
                     # TODO: deal with exceptions
                     extension = mimetypes.guess_extension(
-                        attachment.contentType)
+                        mimetype)
                     if not extension:
                         logger.warning(
                             "Skipping attachment. Unable to determine extension from content-type for unnamed attachment in email: %s.", email.subject)
