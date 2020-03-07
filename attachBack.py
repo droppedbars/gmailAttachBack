@@ -62,13 +62,10 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', co
             if contentType in attachment.contentType:
                 logger.debug("Content-type string of attachment: %s",
                              attachment.contentType)
-                mimetype = attachment.contentType.split(';')[0]
+                mimetype = attachment.contentType.split(';')[0].strip()
                 logger.debug("Mimetype determined to be: %s", mimetype)
                 filename = attachment.filename
                 if not attachment.filename:
-                    # TODO: risk, content-type sometimes has multiple fields, appears to seperate by semi-colon
-                    #  need to remove the noise and just use the content type otherwise the extesion guess could break
-                    # TODO: deal with exceptions
                     extension = mimetypes.guess_extension(
                         mimetype)
                     if not extension:
@@ -86,7 +83,6 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', co
                     # Content-Disposition: inline; filename="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
                     # Content-ID: <sys_attachment.dosys_idf2b51517db5f1700abe8a5f74b961956@SNC.84ec9c02de157ddb>
                     if '?' not in filename:
-                        # TODO: deal with invalid path names
                         logger.debug("Filename: %s", filename)
                         diff = ''
                         if os.path.exists(''.join([downloadPath, filename])):
@@ -104,17 +100,22 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', co
 def main():
     load_dotenv()
     logLevel = os.getenv('ATTACH_LOG_LEVEL', 'INFO')
-    downloadPath = os.getenv('ATTACH_DOWNLOAD_PATH', './')
-    if downloadPath[-1] != '/' and downloadPath[-1] != '\\':
-        downloadPath = downloadPath + '/'
-    appCredentials = os.getenv('ATTACH_APP_CREDENTIALS', './credentials.json')
-    apiToken = os.getenv('ATTACH_API_TOKEN', './token.pickle')
-    query = os.getenv('ATTACH_GMAIL_SEARCH', '')
-    contentType = os.getenv('ATTACH_CONTENT_TYPE', '')
 
     LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
     logging.basicConfig(level=logLevel, format=LOGFORMAT)
     logging.getLogger('googleapiclient').setLevel(logging.WARNING)
+
+    downloadPath = os.getenv('ATTACH_DOWNLOAD_PATH', './')
+    if downloadPath[-1] != '/' and downloadPath[-1] != '\\':
+        downloadPath = downloadPath + '/'
+        if not os.path.isdir(downloadPath):
+            logger.error(
+                "Download directory does not exist, please create it first: %s", downloadPath)
+            exit("Invalid download location proivded")
+    appCredentials = os.getenv('ATTACH_APP_CREDENTIALS', './credentials.json')
+    apiToken = os.getenv('ATTACH_API_TOKEN', './token.pickle')
+    query = os.getenv('ATTACH_GMAIL_SEARCH', '')
+    contentType = os.getenv('ATTACH_CONTENT_TYPE', '')
 
     creds = authenticate(apiToken, appCredentials)
 
