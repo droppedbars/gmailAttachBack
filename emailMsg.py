@@ -130,7 +130,9 @@ class Email():
             messagelist = self.__service.users().messages().list(
                 userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
             self.__messages = messagelist['messages']
-            self.__nextPageToken = messagelist['nextPageToken']
+            self.__nextPageToken = None
+            if 'nextPageToken' in messagelist:
+                self.__nextPageToken = messagelist['nextPageToken']
         messageIds = self.__messages.pop(0)
         message = EmailMsg(self.__service, messageIds['id'], self.__userId)
         return message
