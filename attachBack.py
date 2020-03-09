@@ -24,7 +24,7 @@ SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 API_NAME = 'gmail'
 API_VER = 'v1'
 
-RECORD_FILENAME = 'record.json'
+RECORD_FILENAME = 'records.txt'
 
 
 def authenticate(tokenFileName: str, credFileName: str):
@@ -61,13 +61,13 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, recordFile: str, re
     emails = Email(service, query=query)
 
     for email in emails:
+        logger.debug("Email ID: %s", email.msgId)
         for attachment in email:
-            logger.debug("Attachment id: %s", attachment.id)
             # skip if the attachment has already been downloaded
-            if attachment.id in records:
+            if (email.msgId + attachment.filename) in records:
                 logger.info(
                     "Attachment already downloaded, skipping. Email was: %s", email.subject)
-                next
+                continue
 
             if contentType in attachment.contentType:
                 logger.debug("Content-type string of attachment: %s",
@@ -106,7 +106,7 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, recordFile: str, re
                         f.write(attachment.bytes)
                         f.close()
 
-                        records.append(attachment.id)
+                        records.append(email.msgId + attachment.filename)
                         # TODO: Could be more efficient, perhaps just append the last one
                         with open(recordFile, 'w') as recf:
                             recf.writelines("%s\n" %
@@ -143,8 +143,9 @@ def main():
     recordFile = recordPath + RECORD_FILENAME
 
     records = []
-    with open(recordFile, 'r') as frec:
-        records = [record.rstrip() for record in frec.readlines()]
+    if os.path.exists(recordFile):
+        with open(recordFile, 'r') as frec:
+            records = [record.rstrip() for record in frec.readlines()]
 
     creds = authenticate(apiToken, appCredentials)
 
