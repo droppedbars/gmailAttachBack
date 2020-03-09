@@ -1,4 +1,4 @@
-from __future__ import print_function
+#from __future__ import print_function
 
 import base64
 import json
@@ -81,37 +81,29 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, recordFile: str, re
                     if not extension:
                         logger.warning(
                             "Skipping attachment. Unable to determine extension from content-type for unnamed attachment in email: %s.", email.subject)
-                    filename = email.subject + extension
+                    filename = "temp" + str(time.time()) + extension
                     logger.info(
                         "Attachment had no file name. It will be named: %s", filename)
                 if filename:
-                    # TODO: just proving a point, not a good way to do this, for now skipping
-                    #  it seems some filenames may be files with parameters like in HTTP
-                    #  so, should try to fix the filenames to be on what is allowable by the OS. Example:
-                    # Content-Type: image/png; name="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
-                    # Content-Transfer-Encoding: base64
-                    # Content-Disposition: inline; filename="sys_attachment.do?sys_id=f2b51517db5f1700abe8a5f74b961956"
-                    # Content-ID: <sys_attachment.dosys_idf2b51517db5f1700abe8a5f74b961956@SNC.84ec9c02de157ddb>
-                    if '?' not in filename:
-                        logger.debug("Filename: %s", filename)
-                        diff = ''
-                        if os.path.exists(''.join([downloadPath, filename])):
-                            logger.info("Duplicate file %s found.", filename)
-                            diff = str(time.time())+'-'
+                    logger.debug("Filename: %s", filename)
+                    diff = ''
+                    if os.path.exists(''.join([downloadPath, filename])):
+                        logger.info("Duplicate file %s found.", filename)
+                        diff = str(time.time())+'-'
 
-                        path = ''.join(
-                            [downloadPath, diff, filename])
-                        logger.info("Writing: %s", path)
-                        f = open(path, 'wb')
-                        f.write(attachment.bytes)
-                        f.close()
+                    path = ''.join(
+                        [downloadPath, diff, filename])
+                    logger.info("Writing: %s", path)
+                    f = open(path, 'wb')
+                    f.write(attachment.bytes)
+                    f.close()
 
-                        records.append(email.msgId + attachment.filename)
-                        # TODO: Could be more efficient, perhaps just append the last one
-                        with open(recordFile, 'w') as recf:
-                            recf.writelines("%s\n" %
-                                            record for record in records)
-                        recf.close()
+                    records.append(email.msgId + attachment.filename)
+                    # TODO: Could be more efficient, perhaps just append the last one
+                    with open(recordFile, 'w') as recf:
+                        recf.writelines("%s\n" %
+                                        record for record in records)
+                    recf.close()
 
 
 def main():
