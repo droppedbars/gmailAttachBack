@@ -156,3 +156,5 @@ if __name__ == '__main__':
 # TODO: content-type filtering more flexible (perhaps regex, or list of types)
 # TODO: comment
 # TODO: document how to set up and create credentials
+# TODO: improve handling authentication
+# TODO: some code clean-up is needed

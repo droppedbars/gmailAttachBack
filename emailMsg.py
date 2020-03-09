@@ -115,7 +115,10 @@ class Email():
 
         messagelist = service.users().messages().list(
             userId=self.__userId, q=self.__query).execute()
-        self.__messages = messagelist['messages']
+        if 'messages' in messagelist:
+            self.__messages = messagelist['messages']
+        else:
+            self.__messages = list()
         self.__nextPageToken = None
         if 'nextPageToken' in messagelist:
             self.__nextPageToken = messagelist['nextPageToken']
@@ -129,7 +132,10 @@ class Email():
                 raise StopIteration
             messagelist = self.__service.users().messages().list(
                 userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
-            self.__messages = messagelist['messages']
+            if 'messages' in messagelist:
+                self.__messages = messagelist['messages']
+            else:
+                self.__messages = list()
             self.__nextPageToken = None
             if 'nextPageToken' in messagelist:
                 self.__nextPageToken = messagelist['nextPageToken']
