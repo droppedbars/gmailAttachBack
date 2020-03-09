@@ -1,6 +1,7 @@
 from __future__ import print_function
 
 import base64
+import json
 import logging
 import mimetypes
 import os
@@ -22,6 +23,8 @@ logger = logging.getLogger("attachBack")
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 API_NAME = 'gmail'
 API_VER = 'v1'
+
+RECORD_FILENAME = 'record.json'
 
 
 def authenticate(tokenFileName: str, credFileName: str):
@@ -54,11 +57,18 @@ def authenticate(tokenFileName: str, credFileName: str):
     return creds
 
 
-def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', contentType: str = ''):
+def downloadAttachmentsFromGmail(service, downloadPath: str, recordFile: str, records: list, query: str = '', contentType: str = ''):
     emails = Email(service, query=query)
 
     for email in emails:
         for attachment in email:
+            logger.debug("Attachment id: %s", attachment.id)
+            # skip if the attachment has already been downloaded
+            if attachment.id in records:
+                logger.info(
+                    "Attachment already downloaded, skipping. Email was: %s", email.subject)
+                next
+
             if contentType in attachment.contentType:
                 logger.debug("Content-type string of attachment: %s",
                              attachment.contentType)
@@ -96,6 +106,13 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, query: str = '', co
                         f.write(attachment.bytes)
                         f.close()
 
+                        records.append(attachment.id)
+                        # TODO: Could be more efficient, perhaps just append the last one
+                        with open(recordFile, 'w') as recf:
+                            recf.writelines("%s\n" %
+                                            record for record in records)
+                        recf.close()
+
 
 def main():
     load_dotenv()
@@ -116,20 +133,34 @@ def main():
     apiToken = os.getenv('ATTACH_API_TOKEN', './token.pickle')
     query = os.getenv('ATTACH_GMAIL_SEARCH', '')
     contentType = os.getenv('ATTACH_CONTENT_TYPE', '')
+    recordPath = os.getenv('ATTACH_RECORD_PATH', './')
+    if recordPath[-1] != '/' and recordPath[-1] != '\\':
+        recordPath = recordPath + '/'
+        if not os.path.isdir(recordPath):
+            logger.error(
+                "Record directory does not exist, please create it first: %s", recordPath)
+            exit("Invalid Record location proivded")
+    recordFile = recordPath + RECORD_FILENAME
+
+    records = []
+    with open(recordFile, 'r') as frec:
+        records = [record.rstrip() for record in frec.readlines()]
 
     creds = authenticate(apiToken, appCredentials)
 
     service = build(API_NAME, API_VER, credentials=creds,
                     cache_discovery=False)
 
-    downloadAttachmentsFromGmail(service, downloadPath, query, contentType)
+    downloadAttachmentsFromGmail(
+        service, downloadPath, recordFile, records, query, contentType)
 
 
 if __name__ == '__main__':
     main()
 
 # TODO: make parameters globally available, and commandline param settable
+#   make the record file a globally known directory
 # TODO: content-type filtering more flexible (perhaps regex, or list of types)
 # TODO: comment
 # TODO: document how to set up and create credentials
-# TODO: store messageids that have been downloaded to prevent re-downloading on future runs.
+# TODO: attachment id is not persistent for an attachment! need to figure something else out

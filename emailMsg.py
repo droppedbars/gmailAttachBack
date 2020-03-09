@@ -20,7 +20,7 @@ class Attachment():
         if not attachmentId:
             raise ValueError("Valid attachmentId required for attachment.")
 
-        self.__id = attachmentId
+        self.id = attachmentId
         self.__msgId = msgId
         self.__service = service
         self.filename = fileName
@@ -47,7 +47,7 @@ class EmailMsg():
         message = service.users().messages().get(
             userId=userId, id=msgId).execute()
 
-        self.__msgId = msgId
+        self.msgId = msgId
         self.date, self.sender, self.subject = self.__getHeaderInfo(message)
         # TODO: get the actual email body in here
         self.__attachments = self.__getAttachments(message)
@@ -93,7 +93,7 @@ class EmailMsg():
         length = len(self.__attachments)
         if length <= 0 or length <= self.__attachmentIndex:
             raise StopIteration()
-        attachment = Attachment(self.__service, self.__msgId,
+        attachment = Attachment(self.__service, self.msgId,
                                 self.__attachments[self.__attachmentIndex]['id'],
                                 self.__attachments[self.__attachmentIndex]['filename'],
                                 self.__userId, self.__attachments[self.__attachmentIndex]['content-type'])
