@@ -100,7 +100,7 @@ def downloadAttachmentsFromGmail(service, downloadPath: str, recordFile: str, re
 
                     records.append(email.msgId + attachment.filename)
                     # TODO: Could be more efficient, perhaps just append the last one
-                    with open(recordFile, 'w') as recf:
+                    with open(recordFile, 'w', encoding="utf-8") as recf:
                         recf.writelines("%s\n" %
                                         record for record in records)
                     recf.close()
@@ -136,7 +136,7 @@ def main():
 
     records = []
     if os.path.exists(recordFile):
-        with open(recordFile, 'r') as frec:
+        with open(recordFile, 'r', encoding="utf-8") as frec:
             records = [record.rstrip() for record in frec.readlines()]
 
     creds = authenticate(apiToken, appCredentials)
