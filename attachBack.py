@@ -164,4 +164,3 @@ if __name__ == '__main__':
 # TODO: content-type filtering more flexible (perhaps regex, or list of types)
 # TODO: comment
 # TODO: document how to set up and create credentials
-# TODO: attachment id is not persistent for an attachment! need to figure something else out
