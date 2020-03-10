@@ -15,14 +15,12 @@ from google.auth.transport.requests import Request
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 
-from emailMsg import Attachment, Email, EmailMsg
+from emailMsg import Attachment, Email, EmailMsg, GoogleAuth
 
 logger = logging.getLogger("attachBack")
 
 # If modifying these scopes, delete the file token.pickle.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
-API_NAME = 'gmail'
-API_VER = 'v1'
 
 RECORD_FILENAME = 'records.txt'
 
@@ -37,28 +35,26 @@ def authenticate(tokenFileName: str, credFileName: str):
             creds = pickle.load(token)
             logger.info("Credentials read from %s", tokenFileName)
 
-    # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            logger.info("Credentials were expired, attempting to refresh.")
-            creds.refresh(Request())
-        else:
-            logger.info(
-                "Credentials could not be found, asking for authorization from the user.")
-            flow = InstalledAppFlow.from_client_secrets_file(
-                credFileName, SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
-        with open(tokenFileName, 'wb') as token:
-            pickle.dump(creds, token)
-            logger.info("Credentials saved to %s for future use.",
-                        tokenFileName)
+    # Load the secrets
+    with open(credFileName, 'r') as json_file:
+        client_config = json.load(json_file)
+        logger.info("App secrets read from %s", credFileName)
+
+    # TODO: deal with failure
+    auth = GoogleAuth(SCOPES, GoogleAuth.API_GMAIL,
+                      GoogleAuth.API_VER_1, client_config, creds)
+
+    # Save the credentials for the next run
+    with open(tokenFileName, 'wb') as token:
+        pickle.dump(auth.creds, token)
+        logger.info("Credentials saved to %s for future use.",
+                    tokenFileName)
     logging.info("Successfully authenticated to gmail.")
-    return creds
+    return auth
 
 
-def downloadAttachmentsFromGmail(service, downloadPath: str, recordFile: str, records: list, query: str = '', contentType: str = ''):
-    emails = Email(service, query=query)
+def downloadAttachmentsFromGmail(auth, downloadPath: str, recordFile: str, records: list, query: str = '', contentType: str = ''):
+    emails = Email(auth, query=query)
 
     for email in emails:
         logger.debug("Email ID: %s", email.msgId)
@@ -139,13 +135,10 @@ def main():
         with open(recordFile, 'r', encoding="utf-8") as frec:
             records = [record.rstrip() for record in frec.readlines()]
 
-    creds = authenticate(apiToken, appCredentials)
-
-    service = build(API_NAME, API_VER, credentials=creds,
-                    cache_discovery=False)
+    auth = authenticate(apiToken, appCredentials)
 
     downloadAttachmentsFromGmail(
-        service, downloadPath, recordFile, records, query, contentType)
+        auth, downloadPath, recordFile, records, query, contentType)
 
 
 if __name__ == '__main__':
@@ -156,5 +149,4 @@ if __name__ == '__main__':
 # TODO: content-type filtering more flexible (perhaps regex, or list of types)
 # TODO: comment
 # TODO: document how to set up and create credentials
-# TODO: improve handling authentication
 # TODO: some code clean-up is needed
