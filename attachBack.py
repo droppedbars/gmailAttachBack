@@ -8,6 +8,7 @@ import os
 import os.path
 import pickle
 import pprint
+import re
 import time
 
 from dotenv import load_dotenv
@@ -53,11 +54,37 @@ def authenticate(tokenFileName: str, credFileName: str):
     return auth
 
 
+def isValidFileName(name: str):
+    if not name:
+        logger.debug("Testing filename failed on missing name.", name)
+        return False
+
+    # reg check for invalid characters: [\\\/:\"\?<>|]+
+    p = re.compile(r"[\\\/:\"\?<>|]+")
+    if p.search(name):
+        logger.deug(
+            "Testing filename failed on invalid character \\\/:\"\?<>| : %s", name)
+        return False
+
+    # check that filename doesn't end in a . and the extension doesn't end in a .
+    chunks = name.split('.')
+    if len(chunks) > 0 and not chunks[-1]:
+        logger.debug(
+            "Testing filename failed on extension or filename ended in period: %s", name)
+        return False
+    if len(chunks) > 2 and not chunks[-2]:
+        logger.debug(
+            "Testing filename failed on filename ended in period: %s", name)
+        return False
+
+    return True
+
+
 def downloadAttachmentsFromGmail(auth, downloadPath: str, recordFile: str, records: list, query: str = '', contentType: str = ''):
     emails = Email(auth, query=query)
 
     for email in emails:
-        logger.debug("Email ID: %s", email.msgId)
+        logger.debug("Email ID: %s Subject: %s", email.msgId, email.subject)
         for attachment in email:
             # skip if the attachment has already been downloaded
             if (email.msgId + attachment.filename) in records:
@@ -71,17 +98,24 @@ def downloadAttachmentsFromGmail(auth, downloadPath: str, recordFile: str, recor
                 mimetype = attachment.contentType.split(';')[0].strip()
                 logger.debug("Mimetype determined to be: %s", mimetype)
                 filename = attachment.filename
-                if not attachment.filename:
+
+                logger.debug("Attachment filename: %s", attachment.filename)
+                # if there's no filename or its invalid, we make one up and guess the extension from content-type
+                if not attachment.filename or not isValidFileName(attachment.filename):
                     extension = mimetypes.guess_extension(
                         mimetype)
                     if not extension:
                         logger.warning(
                             "Skipping attachment. Unable to determine extension from content-type for unnamed attachment in email: %s.", email.subject)
+                        continue
+
                     filename = "temp" + str(time.time()) + extension
-                    logger.info(
-                        "Attachment had no file name. It will be named: %s", filename)
+                    logger.info("Invalid name: %s - new name: %s",
+                                attachment.filename, filename)
                 if filename:
                     logger.debug("Filename: %s", filename)
+
+                    # create a name modifier if there's already a file with the same name
                     diff = ''
                     if os.path.exists(''.join([downloadPath, filename])):
                         logger.info("Duplicate file %s found.", filename)
