@@ -237,9 +237,6 @@ def main():
 if __name__ == '__main__':
     main()
 
-# TODO: move authentication so that it just receives the json and doesn't require files, and is in the class
-# TODO: build the service in the class
 # TODO: debug logging
 # TODO: error handling on failed calls
 # TODO: documenting
-# TODO: deleting an email
