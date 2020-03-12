@@ -56,14 +56,14 @@ def authenticate(tokenFileName: str, credFileName: str):
 
 def isValidFileName(name: str):
     if not name:
-        logger.debug("Testing filename failed on missing name.", name)
+        logger.debug("Testing filename failed on missing name.")
         return False
 
     # reg check for invalid characters: [\\\/:\"\?<>|]+
     p = re.compile(r"[\\\/:\"\?<>|]+")
     if p.search(name):
         logger.deug(
-            "Testing filename failed on invalid character \\\/:\"\?<>| : %s", name)
+            "Testing filename failed on invalid character \\/:\"?<>| : %s", name)
         return False
 
     # check that filename doesn't end in a . and the extension doesn't end in a .
@@ -182,5 +182,6 @@ if __name__ == '__main__':
 #   make the record file a globally known directory
 # TODO: content-type filtering more flexible (perhaps regex, or list of types)
 # TODO: comment
-# TODO: document how to set up and create credentials
+# TODO: screenshots for setting up APIs and credentials
+# TODO: set up imports file
 # TODO: some code clean-up is needed
