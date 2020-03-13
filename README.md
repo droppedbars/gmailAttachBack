@@ -2,7 +2,7 @@
 Attachment backup from gmail accounts.
 
 # Permitting gmailAttachBack to access your Gmail
-1. Open web browser to Google API Console: https://console.developers.google.com/apis
+#. Open web browser to Google API Console: https://console.developers.google.com/apis
 2. Select the Project dropdown and click NEW PROJECT
 3. Name the project
 4. Click + ENABLE APIS AND SERVICSE
@@ -32,27 +32,27 @@ Attachment backup from gmail accounts.
 
 # Environment Variables
 The application behaviour can be modified by setting environment variables:
-ATTACH_LOG_LEVEL
-* Defines the log level, options are DEBUG, INFO, WARNING, ERROR, CRITICAL
-* Default value is INFO
-ATTACH_DOWNLOAD_PATH
-* The location where the downloaded attachments will be put. If the location does not exist or has permissions incorrect, then the application will fail.
-* Default value is the same directory that the application is in.
-ATTACH_RECORD_PATH
-* Sets the location where a file named records.txt will be created to store a listing of attachments that were downloaded. In subsequent runs if an attachment appears in this file, it will not be downloaded again. To re-download attachments, delete this file, or remove entries from it.
-* Default value is the same directory that the application is in.
-ATTACH_APP_CREDENTIALS
-* Path and filename to the secrets file downloaded above when enable API access to Gmail
-* If this file is invalid, or does not exist, the application will fail.
+* ATTACH_LOG_LEVEL
+** Defines the log level, options are DEBUG, INFO, WARNING, ERROR, CRITICAL
+** Default value is INFO
+* ATTACH_DOWNLOAD_PATH
+** The location where the downloaded attachments will be put. If the location does not exist or has permissions incorrect, then the application will fail.
+** Default value is the same directory that the application is in.
+* ATTACH_RECORD_PATH
+** Sets the location where a file named records.txt will be created to store a listing of attachments that were downloaded. In subsequent runs if an attachment appears in this file, it will not be downloaded again. To re-download attachments, delete this file, or remove entries from it.
+** Default value is the same directory that the application is in.
+* ATTACH_APP_CREDENTIALS
+** Path and filename to the secrets file downloaded above when enable API access to Gmail
+** If this file is invalid, or does not exist, the application will fail.
 * Default value is ./credentials.json
-ATTACH_API_TOKEN
-* Path and filename to the access credentials obtained during OAuth negotiation.
-* If this file is deleted, you will need to reauthorize the application to access your Gmail.
-* Default value is ./token.pickle
-ATTACH_GMAIL_SEARCH
-* Search parameters for email. This is the same syntax as searching from within Gmail and is useful for restricting the number of emails the application will need to access.
-* No default value
-ATTACH_CONTENT_TYPE
-* Restricts file types to be downloaded based on the content-type of the file. It is a simply substring search. So "image" would be true for "image/jpeg". "pdf" would be true for "application/pdf"
-* No default value
+* ATTACH_API_TOKEN
+** Path and filename to the access credentials obtained during OAuth negotiation.
+** If this file is deleted, you will need to reauthorize the application to access your Gmail.
+** Default value is ./token.pickle
+* ATTACH_GMAIL_SEARCH
+** Search parameters for email. This is the same syntax as searching from within Gmail and is useful for restricting the number of emails the application will need to access.
+** No default value
+* ATTACH_CONTENT_TYPE
+** Restricts file types to be downloaded based on the content-type of the file. It is a simply substring search. So "image" would be true for "image/jpeg". "pdf" would be true for "application/pdf"
+** No default value
 
