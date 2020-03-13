@@ -18,7 +18,7 @@ Attachment backup from gmail accounts.
 1. For the Scope select "../auth/gmail.readonly
 1. It is not necessary to fill out the various URLs
 1. Go to CREDENTIALS
-1. + CREATE CREDENTIAL, OAuth Client ID
+1. CREATE CREDENTIAL, OAuth Client ID
 1. Application Type: Other
 1. Name the application
 1. Download the client secret json file and store it somewhere the application will be able to access it
