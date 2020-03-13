@@ -1,5 +1,6 @@
 # gmailAttachBack
-Attachment backup from gmail accounts.
+Downloads attachments from a Gmail account. 
+The application can use the Gmail query to refine the search, and will go through the resulting emails to download attachments that match the desired content-type.
 
 # Permitting gmailAttachBack to access your Gmail
 1. Open web browser to Google API Console: https://console.developers.google.com/apis
