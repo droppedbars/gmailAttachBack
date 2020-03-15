@@ -1,10 +1,7 @@
-/*.json
-/records.txt
 __pycache__
 .vscode
 /testImages/download-*.png
-fromgmail
-token.pickle
 .env
 .venv
 secrets
+output
