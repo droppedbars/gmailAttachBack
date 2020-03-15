@@ -183,5 +183,4 @@ if __name__ == '__main__':
 # TODO: content-type filtering more flexible (perhaps regex, or list of types)
 # TODO: comment
 # TODO: screenshots for setting up APIs and credentials
-# TODO: set up imports file
 # TODO: some code clean-up is needed
