@@ -6,7 +6,5 @@ __pycache__
 fromgmail
 token.pickle
 .env
-Scripts
-Lib
-Include
-pyvenv.cfg
+.venv
+secrets
