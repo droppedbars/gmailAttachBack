@@ -12,12 +12,23 @@ from googleapiclient.discovery import build
 
 
 class GoogleAuth():
+    """
+    GoogleAuth handles authentication against Google APIs. It fronts the Google API Client
+    Discovery components for building the authentication object given secrets and credetials.
+
+    Attributes
+    ----------
+    creds : Credentials
+        OAuth2 access and refresh tokens.
+    """
+
     API_GMAIL = 'gmail'
     API_VER_1 = 'v1'
 
     # TODO: deal with failure to refresh
     # TODO: deal with user does not authorize
-    def __init__(self, scopes: str, apiName: str, apiVer: str, secrets: json, creds: Credentials = None):
+    def __init__(self, scopes: list, apiName: str, apiVer: str, secrets: json, creds: Credentials = None):
+        # TODO: verify, should scopes be a list or a str?
         self.logger = logging.getLogger(
             "emailMsg." + self.__class__.__name__)
 
@@ -40,12 +51,38 @@ class GoogleAuth():
         self.creds = creds
 
     def buildService(self):
+        """
+        Returns a resource object for interacting with the Google API that the GoogleAuth object
+        represents.
+
+        Returns
+        -------
+        Resource object for interacting with the Google API.
+        """
+
         service = build(self.__apiName, self.__apiVer, credentials=self.creds,
                         cache_discovery=False)
         return service
 
 
 class Attachment():
+    """
+    Attachment represents a Gmail attachment.
+
+    Attributes
+    ----------
+    id : str
+        ID of the attachment
+    msgId : str
+        ID of the email that contains the attachment
+    filename : str
+        Filename of the attachment.
+    contentType : str
+        Content Type of the attachment.
+    bytes : bytes
+        Attachment data as bytes.
+    """
+
     def __init__(self, auth, msgId: str, attachmentId: str, fileName: str, userId: str = 'me', contentType: str = None):
         self.logger = logging.getLogger(
             "emailMsg." + self.__class__.__name__)
@@ -71,6 +108,18 @@ class Attachment():
 
 
 class EmailMsg():
+    """
+    EmailMsg represents a Gmail email message. EmailMsg is iterable to get the attachments associated
+    with the email.
+
+    Attributes
+    ----------
+    msgId : str
+        ID of the email.
+    date : str
+        Date of receipt of the email.
+    """
+
     def __init__(self, auth: GoogleAuth, msgId: str, userId: str = 'me'):
         self.logger = logging.getLogger(
             "emailMsg." + self.__class__.__name__)
@@ -139,6 +188,11 @@ class EmailMsg():
 
 
 class Email():
+    """
+    Email represents the user's Gmail contents. The emails can be iterated and the object will handle
+    all necessary calls to the Gmail APIs to get them.
+    """
+
     def __init__(self, auth: GoogleAuth, userId: str = 'me', query: str = None):
         self.logger = logging.getLogger(
             "emailMsg." + self.__class__.__name__)
@@ -181,7 +235,12 @@ class Email():
         return message
 
 
-def authenticate(scopes: list, tokenFileName: str, credFileName: str):
+def __authenticate(scopes: list, tokenFileName: str, credFileName: str):
+    """
+    __authenticate is test code available for internal testing of the classes in emailMsg and not
+    intended to be robust.
+    """
+
     creds = None
     # The file token.pickle stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -189,22 +248,17 @@ def authenticate(scopes: list, tokenFileName: str, credFileName: str):
     if os.path.exists(tokenFileName):
         with open(tokenFileName, 'rb') as token:
             creds = pickle.load(token)
-            # logger.info("Credentials read from %s", tokenFileName)
 
     # Load the secrets
     with open(credFileName, 'r') as json_file:
         client_config = json.load(json_file)
-        # logger.info("App secrets read from %s", credFileName)
 
-    # TODO: deal with failure
     auth = GoogleAuth(scopes, GoogleAuth.API_GMAIL,
                       GoogleAuth.API_VER_1, client_config, creds)
 
     # Save the credentials for the next run
     with open(tokenFileName, 'wb') as token:
         pickle.dump(auth.creds, token)
-        # logger.info("Credentials saved to %s for future use.",
-        #            tokenFileName)
     logging.info("Successfully authenticated to gmail.")
     return auth
 
@@ -213,8 +267,8 @@ def main():
     LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
     logging.basicConfig(level=logging.WARNING, format=LOGFORMAT)
 
-    auth = authenticate(['https://www.googleapis.com/auth/gmail.readonly'],
-                        'token.pickle', 'credentials-gmail.json')
+    auth = __authenticate(['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.metadata'],
+                          'secrets/token.pickle', 'secrets/credentials-gmail.json')
 
     service = auth.buildService()
 
@@ -239,4 +293,3 @@ if __name__ == '__main__':
 
 # TODO: debug logging
 # TODO: error handling on failed calls
-# TODO: documenting

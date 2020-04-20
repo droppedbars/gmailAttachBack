@@ -1,6 +1,7 @@
 __pycache__
 .vscode
 /testImages/download-*.png
+fromgmail
 .env
 .venv
 secrets
