@@ -32,7 +32,14 @@ class GoogleAuth():
         self.logger = logging.getLogger(
             "emailMsg." + self.__class__.__name__)
 
-        # TODO: value checks for missing parameters
+        if not scopes:
+            raise ValueError("Valid scopes required.")
+        if not apiName:
+            raise ValueError("Valid apiName required.")
+        if not apiVer:
+            raise ValueError("Valid apiVer required.")
+        if not secrets:
+            raise ValueError("Valid secrets required.")
 
         self.__apiVer = apiVer
         self.__apiName = apiName
@@ -169,6 +176,8 @@ class EmailMsg():
                         size = int(part['body']['size'])
                     attachment = {'id': attachmentId, 'filename': filename,
                                   'content-type': contentType, 'size': size}
+                    self.logger.debug(
+                        "Attachment found for message: %s", attachment)
                     attachmentList.append(attachment)
         return attachmentList
 
@@ -203,12 +212,20 @@ class Email():
         self.__auth = auth
         self.__userId = userId
         self.__query = query
+        self.__nextPageToken = None
 
+        self.__loadPageOfMessages()
+
+    def __loadPageOfMessages(self):
+        self.logger.debug(
+            "Retrieving page of messages with next page token of: %s", self.__nextPageToken)
         messagelist = self.__auth.buildService().users().messages().list(
-            userId=self.__userId, q=self.__query).execute()
+            userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
+        # TODO: deal with failure of the call above
         if 'messages' in messagelist:
             self.__messages = messagelist['messages']
         else:
+            self.logger.debug("No messages returned from gmail.")
             self.__messages = list()
         self.__nextPageToken = None
         if 'nextPageToken' in messagelist:
@@ -219,17 +236,10 @@ class Email():
 
     def __next__(self):
         if len(self.__messages) <= 0:
+            self.logger.debug("No more messages in local list.")
             if not self.__nextPageToken:
                 raise StopIteration
-            messagelist = self.__auth.buildService().users().messages().list(
-                userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
-            if 'messages' in messagelist:
-                self.__messages = messagelist['messages']
-            else:
-                self.__messages = list()
-            self.__nextPageToken = None
-            if 'nextPageToken' in messagelist:
-                self.__nextPageToken = messagelist['nextPageToken']
+        self.__loadPageOfMessages()
         messageIds = self.__messages.pop(0)
         message = EmailMsg(self.__auth, messageIds['id'], self.__userId)
         return message
@@ -291,5 +301,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-# TODO: debug logging
 # TODO: error handling on failed calls
