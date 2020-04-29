@@ -5,10 +5,12 @@ import os
 import pickle
 import pprint
 
+from google.auth import exceptions
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 
 
 class GoogleAuth():
@@ -20,15 +22,18 @@ class GoogleAuth():
     ----------
     creds : Credentials
         OAuth2 access and refresh tokens.
+
+    Raises
+    -----------
+    OAuth2Error
+        If permission could not be received by the user for some reason, explicit or due to an error
+        in OAuth2 flow.
     """
 
     API_GMAIL = 'gmail'
     API_VER_1 = 'v1'
 
-    # TODO: deal with failure to refresh
-    # TODO: deal with user does not authorize
     def __init__(self, scopes: list, apiName: str, apiVer: str, secrets: json, creds: Credentials = None):
-        # TODO: verify, should scopes be a list or a str?
         self.logger = logging.getLogger(
             "emailMsg." + self.__class__.__name__)
 
@@ -48,13 +53,26 @@ class GoogleAuth():
             if creds and creds.expired and creds.refresh_token:
                 self.logger.debug(
                     "Credentials were expired, attempting to refresh.")
-                creds.refresh(Request())
+                try:
+                    creds.refresh(Request())
+                except exceptions.RefreshError as e:
+                    self.logger.info(
+                        "Credentials failed to be refreshed: %s", e)
+                    raise ValueError(
+                        "Invalid credentials, or credentials could not be refreshed.")
             else:
                 self.logger.info(
                     "Credentials could not be found, asking for authorization from the user.")
                 flow = InstalledAppFlow.from_client_config(
                     secrets, scopes)
-                creds = flow.run_local_server(port=0)
+                try:
+                    creds = flow.run_local_server(port=0)
+
+                except OAuth2Error as e:
+                    self.logger.warning(
+                        "Failure to get user permission: %s", e)
+                    raise e
+
         self.creds = creds
 
     def buildService(self):
@@ -275,7 +293,7 @@ def __authenticate(scopes: list, tokenFileName: str, credFileName: str):
 
 def main():
     LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
-    logging.basicConfig(level=logging.WARNING, format=LOGFORMAT)
+    logging.basicConfig(level=logging.DEBUG, format=LOGFORMAT)
 
     auth = __authenticate(['https://www.googleapis.com/auth/gmail.readonly', 'https://www.googleapis.com/auth/gmail.metadata'],
                           'secrets/token.pickle', 'secrets/credentials-gmail.json')
