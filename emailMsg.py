@@ -162,7 +162,7 @@ class EmailMsg():
             userId=userId, id=msgId).execute()
 
         self.date, self.sender, self.subject = self.__getHeaderInfo(message)
-        # TODO: get the actual email body in here
+        self.__body = self.__getBody(message)
         self.__attachments = self.__getAttachments(message)
         self.__attachmentIndex = 0
 
@@ -175,6 +175,26 @@ class EmailMsg():
             if header['name'] == 'From':
                 sender = header['value']
         return date, sender, subject
+
+    def __getBody(self, message):
+        # TODO: get the actual email body in here. For now returning empty string.
+
+        # Should verify against RFCs, but from reading email it looks like this is the pattern:
+        # 1. Check payload mimeType for 'text/[plain|html]
+        #    If this is the case read the email body from payload's body's data
+        # 2. If the payload mimetype is 'multipart/alternative' the read the parts of the payload
+        # 3. For each part check:
+        #     header name=Content-ID 's value. If it's 'text-body' or 'html-body' that's the email body in those formats
+        #       (an email may have both)
+        #       Note also, there may be no Content-ID key value pair in the header, which may mean it's the email body
+        #     mimetype for 'text/[plain|html]'
+        #     based on the above, read the email from the payload's part's body's data
+        #     The partId can be used to determine order (not sure if that's relevant)
+        #     Would need to address html and text options for the email body.
+        # 4. If however the part's mimetype is 'multi-part/alternative' then the part has parts.
+        #     Read those parts' header and mimetype as above
+        #     partIds may be numbered as 0.0, 0.1, 1.0, 1.0, etc
+        return ''
 
     def __getAttachments(self, message):
         attachmentList = []
