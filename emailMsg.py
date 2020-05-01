@@ -5,11 +5,13 @@ import os
 import pickle
 import pprint
 
+import requests
 from google.auth import exceptions
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 
 
@@ -125,11 +127,19 @@ class Attachment():
         self.__userId = userId
         self.contentType = contentType
 
-        attachment = self.__auth.buildService().users().messages().attachments().get(
-            userId=userId, messageId=msgId, id=attachmentId).execute()
-        self.bytes = base64.urlsafe_b64decode(
-            attachment['data'].encode('UTF-8'))
-        self.__size = attachment['size']
+        request = self.__auth.buildService().users().messages().attachments().get(
+            userId=userId, messageId=msgId, id=attachmentId)
+        try:
+            attachment = request.execute()
+            self.bytes = base64.urlsafe_b64decode(
+                attachment['data'].encode('UTF-8'))
+            self.__size = attachment['size']
+        except HttpError as e:
+            errorMessage = json.loads(e.content)
+            self.logger.error(
+                "Error getting attachment: %s %s", errorMessage["error"]["code"], errorMessage["error"]["message"])
+            raise requests.HTTPError(
+                errorMessage["error"]["code"], errorMessage["error"]["message"])
 
 
 class EmailMsg():
@@ -158,13 +168,21 @@ class EmailMsg():
         self.__userId = userId
         self.msgId = msgId
 
-        message = self.__auth.buildService().users().messages().get(
-            userId=userId, id=msgId).execute()
-
-        self.date, self.sender, self.subject = self.__getHeaderInfo(message)
-        self.__body = self.__getBody(message)
-        self.__attachments = self.__getAttachments(message)
-        self.__attachmentIndex = 0
+        request = self.__auth.buildService().users().messages().get(
+            userId=userId, id=msgId)
+        try:
+            message = request.execute()
+            self.date, self.sender, self.subject = self.__getHeaderInfo(
+                message)
+            self.__body = self.__getBody(message)
+            self.__attachments = self.__getAttachments(message)
+            self.__attachmentIndex = 0
+        except HttpError as e:
+            errorMessage = json.loads(e.content)
+            self.logger.error(
+                "Error getting email: %s %s", errorMessage["error"]["code"], errorMessage["error"]["message"])
+            raise requests.HTTPError(
+                errorMessage["error"]["code"], errorMessage["error"]["message"])
 
     def __getHeaderInfo(self, message):
         for header in message['payload']['headers']:
@@ -257,17 +275,25 @@ class Email():
     def __loadPageOfMessages(self):
         self.logger.debug(
             "Retrieving page of messages with next page token of: %s", self.__nextPageToken)
-        messagelist = self.__auth.buildService().users().messages().list(
-            userId='me', pageToken=self.__nextPageToken, q=self.__query).execute()
-        # TODO: deal with failure of the call above
-        if 'messages' in messagelist:
-            self.__messages = messagelist['messages']
-        else:
-            self.logger.debug("No messages returned from gmail.")
-            self.__messages = list()
-        self.__nextPageToken = None
-        if 'nextPageToken' in messagelist:
-            self.__nextPageToken = messagelist['nextPageToken']
+        request = self.__auth.buildService().users().messages().list(
+            userId='me', pageToken=self.__nextPageToken, q=self.__query)
+        try:
+            messagelist = request.execute()
+
+            if 'messages' in messagelist:
+                self.__messages = messagelist['messages']
+            else:
+                self.logger.debug("No messages returned from gmail.")
+                self.__messages = list()
+            self.__nextPageToken = None
+            if 'nextPageToken' in messagelist:
+                self.__nextPageToken = messagelist['nextPageToken']
+        except HttpError as e:
+            errorMessage = json.loads(e.content)
+            self.logger.error(
+                "Error getting page of emails: %s %s", errorMessage["error"]["code"], errorMessage["error"]["message"])
+            raise requests.HTTPError(
+                errorMessage["error"]["code"], errorMessage["error"]["message"])
 
     def __iter__(self):
         return self
@@ -338,5 +364,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# TODO: error handling on failed calls
