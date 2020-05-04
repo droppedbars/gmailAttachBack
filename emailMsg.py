@@ -185,13 +185,22 @@ class EmailMsg():
                 errorMessage["error"]["code"], errorMessage["error"]["message"])
 
     def __getHeaderInfo(self, message):
+        subject = None
+        date = None
+        sender = None
         for header in message['payload']['headers']:
-            if header['name'] == 'Subject':
+            if str.lower(header['name']) == 'subject':
                 subject = header['value']
-            if header['name'] == 'Date':
+            if str.lower(header['name']) == 'date':
                 date = header['value']
-            if header['name'] == 'From':
+            if str.lower(header['name']) == 'from':
                 sender = header['value']
+
+        # Not testing subject as the email subject can be empty
+        if not date or not sender:
+            self.logger.error(
+                "Expected header information missing. Expected Date or From, one of which wasn't found. Header info: \n%s", message['payload']['headers'])
+
         return date, sender, subject
 
     def __getBody(self, message):
