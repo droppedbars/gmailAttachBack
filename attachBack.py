@@ -121,13 +121,16 @@ def downloadAttachmentsFromGmail(auth: GoogleAuth, downloadPath: str, recordFile
         Path to download attachments into
     recordFile : str
         Path and file name to record downloaded attachments into to ensure they are not duplicated on subsequent runs
-    records : list
-        List of files previously downloaded from gmail
     query : str
         gmail query string, used to filter emails that will be checked for attachments
     contentType : str
         string or substring that represents content-types of attachments, such as "application/pdf" or "image/jpeg" or "image/"
     """
+
+    records = []
+    if os.path.exists(recordFile):
+        with open(recordFile, 'r', encoding="utf-8") as frec:
+            records = [record.rstrip() for record in frec.readlines()]
 
     emails = Email(auth, query=query)
 
@@ -214,19 +217,13 @@ def main():
         if not os.path.isdir(recordPath):
             logger.error(
                 "Record directory does not exist, please create it first: %s", recordPath)
-            exit("Invalid Record location proivded")
+            exit("Invalid Record location provided")
     recordFile = recordPath + RECORD_FILENAME
-
-    records = []
-    if os.path.exists(recordFile):
-        with open(recordFile, 'r', encoding="utf-8") as frec:
-            records = [record.rstrip() for record in frec.readlines()]
 
     auth = authenticate(apiToken, appCredentials)
 
-    # TODO: sill to pass in the records and the file. Should deal with records or files in function, but not both.
     downloadAttachmentsFromGmail(
-        auth, downloadPath, recordFile, records, query, contentType)
+        auth, downloadPath, recordFile, query, contentType)
 
 
 if __name__ == '__main__':
