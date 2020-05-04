@@ -303,7 +303,7 @@ class Email():
             self.logger.debug("No more messages in local list.")
             if not self.__nextPageToken:
                 raise StopIteration
-        self.__loadPageOfMessages()
+            self.__loadPageOfMessages()
         messageIds = self.__messages.pop(0)
         message = EmailMsg(self.__auth, messageIds['id'], self.__userId)
         return message
