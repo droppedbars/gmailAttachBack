@@ -176,11 +176,11 @@ def downloadAttachmentsFromGmail(auth: GoogleAuth, downloadPath: str, recordFile
                     f.write(attachment.bytes)
                     f.close()
 
-                    records.append(email.msgId + attachment.filename)
-                    # TODO: Could be more efficient, perhaps just append the last one
-                    with open(recordFile, 'w', encoding="utf-8") as recf:
-                        recf.writelines("%s\n" %
-                                        record for record in records)
+                    newRecord = email.msgId + attachment.filename
+                    records.append(newRecord)
+
+                    recf = open(recordFile, 'a', encoding="utf-8")
+                    recf.write(newRecord + "\n")
                     recf.close()
 
 
