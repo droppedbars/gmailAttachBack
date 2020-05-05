@@ -1,20 +1,16 @@
 #from __future__ import print_function
 
-import base64
 import json
 import logging
 import mimetypes
 import os
 import os.path
 import pickle
-import pprint
 import re
 import time
 
 from dotenv import load_dotenv
-from google.auth.transport.requests import Request
-from google_auth_oauthlib.flow import InstalledAppFlow
-from googleapiclient.discovery import build
+from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 
 from emailMsg import Attachment, Email, EmailMsg, GoogleAuth
 
@@ -56,15 +52,19 @@ def authenticate(tokenFileName: str, credFileName: str):
         logger.info("App secrets read from %s", credFileName)
 
     # TODO: deal with failure
-    auth = GoogleAuth(SCOPES, GoogleAuth.API_GMAIL,
-                      GoogleAuth.API_VER_1, client_config, creds)
+    try:
+        auth = GoogleAuth(SCOPES, GoogleAuth.API_GMAIL,
+                          GoogleAuth.API_VER_1, client_config, creds)
 
-    # Save the credentials for the next run
-    with open(tokenFileName, 'wb') as token:
-        pickle.dump(auth.creds, token)
-        logger.info("Credentials saved to %s for future use.",
-                    tokenFileName)
-    logging.info("Successfully authenticated to gmail.")
+        # Save the credentials for the next run
+        with open(tokenFileName, 'wb') as token:
+            pickle.dump(auth.creds, token)
+            logger.info("Credentials saved to %s for future use.",
+                        tokenFileName)
+        logging.info("Successfully authenticated to gmail.")
+    except OAuth2Error as e:
+        logging.error("Failure to authenticate to gmail: %s", e)
+        raise e
     return auth
 
 
