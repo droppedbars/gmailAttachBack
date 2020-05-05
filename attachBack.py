@@ -128,9 +128,8 @@ def downloadAttachmentsFromGmail(auth: GoogleAuth, downloadPath: str, recordFile
     """
 
     records = []
-    if os.path.exists(recordFile):
-        with open(recordFile, 'r', encoding="utf-8") as frec:
-            records = [record.rstrip() for record in frec.readlines()]
+    recf = open(recordFile, 'a+', encoding="utf-8")
+    records = [record.rstrip() for record in recf.readlines()]
 
     emails = Email(auth, query=query)
 
@@ -182,9 +181,8 @@ def downloadAttachmentsFromGmail(auth: GoogleAuth, downloadPath: str, recordFile
                     newRecord = email.msgId + attachment.filename
                     records.append(newRecord)
 
-                    recf = open(recordFile, 'a', encoding="utf-8")
                     recf.write(newRecord + "\n")
-                    recf.close()
+    recf.close()
 
 
 def main():
