@@ -49,14 +49,17 @@ def loadenv():
     contentType = loadvar('ATTACH_CONTENT_TYPE', '')
     recordPath = loadvar('ATTACH_RECORD_PATH', './')
 
-    # TODO: verify logLevel is a valid option
+    if logLevel not in ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]:
+        logger.error("Invalid log level specified: %s", logLevel)
+        exit("Invalid log level provided")
 
     if downloadPath[-1] != '/' and downloadPath[-1] != '\\':
         downloadPath = downloadPath + '/'
         if not os.path.isdir(downloadPath):
             logger.error(
                 "Download directory does not exist, please create it first: %s", downloadPath)
-            exit("Invalid download location proivded")
+            exit("Invalid download location provided")
+
     if recordPath[-1] != '/' and recordPath[-1] != '\\':
         recordPath = recordPath + '/'
         if not os.path.isdir(recordPath):
