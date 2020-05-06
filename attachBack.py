@@ -9,9 +9,9 @@ import pickle
 import re
 import time
 
-from dotenv import load_dotenv
 from oauthlib.oauth2.rfc6749.errors import OAuth2Error
 
+import envvar
 from emailMsg import Attachment, Email, EmailMsg, GoogleAuth
 
 logger = logging.getLogger("attachBack")
@@ -51,7 +51,6 @@ def authenticate(tokenFileName: str, credFileName: str):
         client_config = json.load(json_file)
         logger.info("App secrets read from %s", credFileName)
 
-    # TODO: deal with failure
     try:
         auth = GoogleAuth(SCOPES, GoogleAuth.API_GMAIL,
                           GoogleAuth.API_VER_1, client_config, creds)
@@ -191,44 +190,20 @@ def main():
     Sets the log level and reads input parameters.
     """
 
-    load_dotenv()
-    logLevel = os.getenv('ATTACH_LOG_LEVEL', 'INFO')
-
     LOGFORMAT = "%(asctime)s %(levelname)s - %(name)s.%(funcName)s - %(message)s"
-    logging.basicConfig(level=logLevel, format=LOGFORMAT)
+    logging.basicConfig(level=logging.INFO, format=LOGFORMAT)
     logging.getLogger('googleapiclient').setLevel(logging.WARNING)
 
-    downloadPath = os.getenv('ATTACH_DOWNLOAD_PATH', './')
-    if downloadPath[-1] != '/' and downloadPath[-1] != '\\':
-        downloadPath = downloadPath + '/'
-        if not os.path.isdir(downloadPath):
-            logger.error(
-                "Download directory does not exist, please create it first: %s", downloadPath)
-            exit("Invalid download location proivded")
-    appCredentials = os.getenv('ATTACH_APP_CREDENTIALS', './credentials.json')
-    apiToken = os.getenv('ATTACH_API_TOKEN', './token.pickle')
-    query = os.getenv('ATTACH_GMAIL_SEARCH', '')
-    contentType = os.getenv('ATTACH_CONTENT_TYPE', '')
-    recordPath = os.getenv('ATTACH_RECORD_PATH', './')
-    if recordPath[-1] != '/' and recordPath[-1] != '\\':
-        recordPath = recordPath + '/'
-        if not os.path.isdir(recordPath):
-            logger.error(
-                "Record directory does not exist, please create it first: %s", recordPath)
-            exit("Invalid Record location provided")
-    recordFile = recordPath + RECORD_FILENAME
+    envvar.loadenv()
+    logger.setLevel(envvar.logLevel)
 
-    auth = authenticate(apiToken, appCredentials)
+    recordFile = envvar.recordPath + RECORD_FILENAME
+
+    auth = authenticate(envvar.apiToken, envvar.appCredentials)
 
     downloadAttachmentsFromGmail(
-        auth, downloadPath, recordFile, query, contentType)
+        auth, envvar.downloadPath, recordFile, envvar.query, envvar.contentType)
 
 
 if __name__ == '__main__':
     main()
-
-# TODO: make parameters globally available, and commandline param settable
-#   make the record file a globally known directory
-# TODO: content-type filtering more flexible (perhaps regex, or list of types)
-# TODO: screenshots for setting up APIs and credentials
-# TODO: some code clean-up is needed
